@@ -37,12 +37,17 @@ public class Node implements Comparable<Node> {
     return parent;
   }
 
+  // se usa en el algoritmo A* cuando se crea una PriorityQueue para representar el open set
+  // al traer un nuevo nodo con openSet.poll(), viene y compara de esta manera
+  // compara solo el atributo F y devuelve el mayor
   @Override
   public int compareTo(Node other) {
     return Integer.compare(getF(), other.getF());
   }
 
-  // cuando se verifica con contains() se revisa de esta manera el Objecto
+  // cuando se verifica si el vecino ya esta en el conjunto de abierto o cerrado
+  // closedSet.contains(neighbor), !openSet.contains(neighbor)
+  // se usa contains() el cual usa este metodo que compara si la fila y la columna son iguales
   @Override
   public boolean equals(Object obj) {
     if (obj instanceof Node) {

@@ -1,15 +1,18 @@
 import java.util.*;
-import java.util.PriorityQueue;
-import java.util.Set;
 
 public class AStarTree {
 
-  private static final int ROWS = 6;
-  private static final int COLS = 8;
-  // private static final int MAX_ITERATIONS = ROWS * COLS;
+  private static final int ROWS = 60;
+  private static final int COLS = 80;
+  private static final int MAX_ITERATIONS = ROWS * COLS;
 
+  // posibles vecinos que se pueden verificar
+  // que son arriba, abajo, izquierda y derecha
   private static final int[][] NEIGHBORS = { { -1, 0 }, { 0, -1 }, { 1, 0 }, { 0, 1 } };
 
+  // la heuristica es la distancia euclidiana, que es 
+  // la raiz cuadrada de la suma de los catetos al cuadrado 
+  // C^2 = A^2 + B^2
   private static int heuristic(int row1, int col1, int row2, int col2) {
     // Heuristic function: Euclidean distance
     int dRow = row1 - row2;
@@ -17,6 +20,8 @@ public class AStarTree {
     return (int) Math.sqrt(dRow * dRow + dCol * dCol);
   }
 
+  // la distancia es la distancia de manhattan
+  // que es la suma de los valores absolutos de la diferencia en la fila y la columna
   private static int distance(int row1, int col1, int row2, int col2) {
     // Heuristic function: Euclidean distance
     int dRow = row1 - row2;
@@ -24,6 +29,24 @@ public class AStarTree {
     return (int) Math.abs(dRow) + Math.abs(dCol);
   }
 
+  // se obtiene el camino desde el nodo final hasta el nodo inicial
+  // tomando el atributo padre de cado nodo
+  public static List<Node> getPath(Node endNode) {
+    List<Node> path = new ArrayList<>();
+    Node currentNode = endNode;
+    while (currentNode != null) {
+      path.add(currentNode);
+      currentNode = currentNode.parent;
+    }
+    Collections.reverse(path);
+    return path;
+  }
+
+  // se obtienen los vecinos de un nodo
+  // recorriendo la lista NEIGHBORS definida arriba,
+  // verificando que el nodo no este fuera de los limites de la matriz
+  // que el nodo no sea un obstaculo
+  // se crea un nuevo nodo con los valores de la fila, columna, costo, heuristica y padre
   public static List<Node> getNeighbors(Node node, boolean[][] grid, int[] end) {
     List<Node> neighbors = new ArrayList<>();
     for (int i = 0; i < NEIGHBORS.length; i++) {
@@ -38,6 +61,8 @@ public class AStarTree {
     return neighbors;
   }
 
+  // se implementa el algoritmo A* de acuord al pseudocodigo
+  // usando una PriorityQueue para el open set para obtener siempre el vecino con mayor F
   public static Node aStar(boolean[][] grid, int[] start, int[] end) {
     Node startNode = new Node(start[0], start[1], 0, 0, null);
     PriorityQueue<Node> openSet = new PriorityQueue<>();
@@ -48,48 +73,19 @@ public class AStarTree {
     while (!openSet.isEmpty() && iterations < MAX_ITERATIONS) {
       iterations++;
       Node current = openSet.poll();
-      System.out.println();
-      System.out.print("current Node: ");
-      System.out.println("[" + current.getRow() + "," + current.getCol() + "]");
-      System.out.print("openSet:");
-      for (Node n : openSet) {
-        System.out.print("[" + n.getRow() + "," + n.getCol() + "]");
-      }
-      System.out.println();
-      System.out.print("closedSet");
-      for (Node n : closedSet) {
-        System.out.print("[" + n.getRow() + "," + n.getCol() + "]");
-      }
-      System.out.println();
-      System.out.println("---------------------------------------------------");
-
       if (current.row == end[0] && current.col == end[1]) {
         return current;
       }
       closedSet.add(current);
       for (Node neighbor : getNeighbors(current, grid, end)) {
         if (closedSet.contains(neighbor)) {
-          System.out.println("CONTAINS NEIGHBORS");
           continue;
         }
         int tentativeG = current.g + distance(current.getRow(), current.getCol(), neighbor.getRow(), neighbor.getCol());
-        // int tentativeG = current.g + 1;
         if (!openSet.contains(neighbor) || tentativeG < neighbor.g) {
           neighbor.g = tentativeG;
           neighbor.parent = current;
-          if (openSet.contains(neighbor)) {
-            System.out.println("INSIDE NEIGHBORS");
-            System.out.print("openSet:");
-            for (Node n : openSet) {
-              System.out.print("[" + n.getRow() + "," + n.getCol() + "]");
-              System.out.println("F: " + n.getF());
-            }
-            System.out.println("-------------------------");
-            System.out.println();
-          }
           if (!openSet.contains(neighbor)) {
-            System.out.println("ADDING NEIGHBORS");
-            System.out.println("[" + neighbor.getRow() + "," + neighbor.getCol() + "]");
             openSet.offer(neighbor);
           }
         }
