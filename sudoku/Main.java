@@ -1,19 +1,13 @@
-import com.qqwing.*;
-import org.jgap.*;
+import com.qqwing.Difficulty;
 
 public class Main {
   public static void main(String[] args) {
     System.out.println("Hello World");
-    QQWing test = new QQWing();
-    test.generatePuzzle();
-    // test.setPrintStyle(PrintStyle.ONE_LINE);
-    test.printPuzzle();
-    test.solve();
-    test.printSolution();
-
+    Difficulty d = Difficulty.EASY;
+    int[] sudoku = sudoku.computePuzzleByDifficulty(d);
+    int[][] matrix = sudoku.arrayToMatrix(sudoku);
+    sudoku.printMatrix(matrix);
   }
 
-  public static void test(IChromosome a_potentialSolution) {
-    System.out.println("Hello World");
-  }
+
 }
