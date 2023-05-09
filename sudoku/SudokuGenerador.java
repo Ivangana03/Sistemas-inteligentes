@@ -1,7 +1,7 @@
 import com.qqwing.*;
 import com.qqwing.Difficulty;
 
-public class sudoku {
+public class SudokuGenerador {
 
   // method thath receive array of 81 int and convert to matrix of 9x9
   public static int[][] arrayToMatrix(int[] input) {
