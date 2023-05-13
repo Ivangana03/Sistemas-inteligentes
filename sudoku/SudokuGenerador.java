@@ -17,14 +17,22 @@ public class SudokuGenerador {
   }
 
   // method that receive int matrix and prints as table
-  public static void printMatrix(int[][] matrix) {
+  public static String printMatrix(int[][] matrix) {
+    String result = "";
     for (int i = 0; i < 9; i++) {
-      System.out.print("|");
-      for (int j = 0; j < 9; j++) {
-        System.out.print(matrix[i][j] + "|");
+      if (i % 3 == 0) {
+        result += "-------------------------\n";
       }
-      System.out.println("");
+      for (int j = 0; j < 9; j++) {
+        if (j % 3 == 0) {
+          result += "| ";
+        }
+        result += matrix[i][j] + " ";
+      }
+      result += "|\n";
     }
+    result += "-------------------------\n";
+    return result;
   }
 
   public static int[] computePuzzleByDifficulty(Difficulty d) {
@@ -36,7 +44,7 @@ public class SudokuGenerador {
       qq.generatePuzzle();
       qq.solve();
       Difficulty actual_d = qq.getDifficulty();
-      System.out.println("Difficulty: " + actual_d.getName());
+      // System.out.println("Difficulty: " + actual_d.getName());
       go_on = !actual_d.equals(d);
     }
     int[] puzzle = qq.getPuzzle();

@@ -62,4 +62,23 @@ public class Individuo implements Comparable<Individuo> {
     return other.fitness - this.fitness;
   }
 
+  //print genes to string with format
+  public String toString() {
+    String result = "";
+    for (int i = 0; i < 9; i++) {
+      if (i % 3 == 0) {
+        result += "-------------------------\n";
+      }
+      for (int j = 0; j < 9; j++) {
+        if (j % 3 == 0) {
+          result += "| ";
+        }
+        result += genes[i][j] + " ";
+      }
+      result += "|\n";
+    }
+    result += "-------------------------\n";
+    return result;
+  }
+
 }
