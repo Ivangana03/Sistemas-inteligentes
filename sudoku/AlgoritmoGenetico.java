@@ -11,11 +11,15 @@ public class AlgoritmoGenetico {
   private int cantidadPoblacion;
   private int[][] sudoku;
   private Individuo solucion;
+  private double tasaCruce;
+  private double tasaMutacion;
 
-  public AlgoritmoGenetico(int[][] sudoku, int cantidadPoblacion) {
+  public AlgoritmoGenetico(int[][] sudoku, int cantidadPoblacion, double tasaCruce, double tasaMutacion) {
     this.sudoku = sudoku;
     this.cantidadPoblacion = cantidadPoblacion;
     this.poblacion = generarPoblacion();
+    this.tasaCruce = tasaCruce;
+    this.tasaMutacion = tasaMutacion;
   }
 
   public List<Individuo> getPoblacion() {
@@ -62,72 +66,130 @@ public class AlgoritmoGenetico {
     return new Individuo(sudokuPermutado);
   }
 
-  public Individuo seleccionarIndividuo() {
-    int sumaFitness = 0;
-    for (Individuo individuo : this.poblacion) {
-      sumaFitness += individuo.getFitness();
+  public Individuo[] cruzarIndividuos(Individuo individuo1, Individuo individuo2) {
+    int[][] childSudoku1 = new int[9][9];
+    int[][] childSudoku2 = new int[9][9];
+    // copiar todos los datos del primer padre al hijo 1
+    for (int row = 0; row < 9; row++) {
+      System.arraycopy(individuo1.getGenes()[row], 0, childSudoku1[row], 0, 9);
     }
 
-    int random = (int) (Math.random() * sumaFitness); // Genera un número aleatorio entre 0 y la suma total de los
+    // copiar todos los datos del segundo padre al hijo 2
+    for (int row = 0; row < 9; row++) {
+      System.arraycopy(individuo2.getGenes()[row], 0, childSudoku2[row], 0, 9);
+    }
 
-    int sumaParcial = 0;
-    for (Individuo individuo : poblacion) {
-      sumaParcial += individuo.getFitness();
-      if (sumaParcial >= random) {
-        return individuo; // Retorna el individuo en el que se detuvo el recorrido
+    double randomOperacion = Math.random();
+    if (randomOperacion < this.tasaCruce) {
+      int crossoverRow = (int) (Math.random() * 8); // seleccionar una fila aleatoria
+
+      // copiar las primeras "crossoverRow" filas del primer individuo al primer hijo
+      // y las restantes filas del segundo individuo al segundo hijo
+      for (int row = 0; row < crossoverRow; row++) {
+        System.arraycopy(individuo1.getGenes()[row], 0, childSudoku1[row], 0, 9);
+        System.arraycopy(individuo2.getGenes()[row], 0, childSudoku2[row], 0, 9);
+      }
+
+      // copiar las restantes filas del primer individuo al segundo hijo
+      // y las restantes filas del segundo individuo al primer hijo
+      for (int row = crossoverRow; row < 9; row++) {
+        System.arraycopy(individuo2.getGenes()[row], 0, childSudoku1[row], 0, 9);
+        System.arraycopy(individuo1.getGenes()[row], 0, childSudoku2[row], 0, 9);
       }
     }
-    return null; // Si no se encuentra ningún individuo, retorna null
+    Individuo[] hijos = new Individuo[2];
+    hijos[0] = new Individuo(childSudoku1);
+    hijos[1] = new Individuo(childSudoku2);
+    return hijos;
   }
 
-  public Individuo cruzarIndividuos(Individuo individuo1, Individuo individuo2) {
-    int[][] childSudoku = new int[9][9];
-    int crossoverRow = (int) (Math.random() * 9); // seleccionar una fila aleatoria
+  public void mutarIndividuoVerificar(Individuo individuo) {
+    double randomOperacion = Math.random();
+    if (randomOperacion < this.tasaMutacion) {
+      int casilla1, casilla2, fila;
+      boolean duplicado = false;
+      do {
+        casilla1 = (int) (Math.random() * 9); // Selecciona una casilla aleatoria de la fila
+        casilla2 = (int) (Math.random() * 9); // Selecciona otra casilla aleatoria de la fila
+        fila = (int) (Math.random() * 9); // Selecciona una fila aleatoria
 
-    // copiar las primeras "crossoverRow" filas del primer individuo al hijo
-    for (int row = 0; row < crossoverRow; row++) {
-      System.arraycopy(individuo1.getGenes()[row], 0, childSudoku[row], 0, 9);
+        // Verifica que las casillas sean diferentes y que ambas estén vacías en el
+        // sudoku original
+        if (casilla1 == casilla2 || this.sudoku[fila][casilla1] != 0 || this.sudoku[fila][casilla2] != 0) {
+          duplicado = false;
+          int valor1 = individuo.getGenes()[fila][casilla1];
+          int valor2 = individuo.getGenes()[fila][casilla2];
+
+          // Verifica si los valores a intercambiar están duplicados en la columna o
+          // cuadrado de 3x3
+          for (int i = 0; i < 9; i++) {
+            if (i != fila) {
+              if (individuo.getGenes()[i][casilla1] == valor2 || individuo.getGenes()[i][casilla2] == valor1) {
+                duplicado = true;
+                break;
+              }
+            }
+          }
+
+          if (!duplicado) {
+            int filaInicial = (fila / 3) * 3;
+            int columnaInicial1 = (casilla1 / 3) * 3;
+            int columnaInicial2 = (casilla2 / 3) * 3;
+            for (int i = filaInicial; i < filaInicial + 3; i++) {
+              for (int j = columnaInicial1; j < columnaInicial1 + 3; j++) {
+                if (i != fila || j != casilla1) {
+                  if (individuo.getGenes()[i][j] == valor2) {
+                    duplicado = true;
+                    break;
+                  }
+                }
+              }
+              if (duplicado) {
+                break;
+              }
+            }
+            if (!duplicado) {
+              for (int i = filaInicial; i < filaInicial + 3; i++) {
+                for (int j = columnaInicial2; j < columnaInicial2 + 3; j++) {
+                  if (i != fila || j != casilla2) {
+                    if (individuo.getGenes()[i][j] == valor1) {
+                      duplicado = true;
+                      break;
+                    }
+                  }
+                }
+                if (duplicado) {
+                  break;
+                }
+              }
+            }
+          }
+        }
+      } while (duplicado);
+
+      // Intercambia las casillas seleccionadas
+      int temp = individuo.getGenes()[fila][casilla1];
+      individuo.getGenes()[fila][casilla1] = individuo.getGenes()[fila][casilla2];
+      individuo.getGenes()[fila][casilla2] = temp;
     }
-
-    // copiar las restantes filas del segundo individuo al hijo
-    for (int row = crossoverRow; row < 9; row++) {
-      System.arraycopy(individuo2.getGenes()[row], 0, childSudoku[row], 0, 9);
-    }
-
-    return new Individuo(childSudoku);
   }
 
-  public Individuo mutarIndividuo(Individuo individuo) {
-    // hacer este proceso 5 veces
-    int[][] nuevoSudoku = new int[9][9];
-    // for (int x = 0; x < 5; x++) {
-    int casilla1, casilla2, fila;
-    do {
-      casilla1 = (int) (Math.random() * 9); // Selecciona una casilla aleatoria de la fila
-      casilla2 = (int) (Math.random() * 9); // Selecciona otra casilla aleatoria de la fila
-      fila = (int) (Math.random() * 9); // Selecciona una fila aleatoria
-    } while (casilla1 == casilla2 || this.sudoku[fila][casilla1] != 0 || this.sudoku[fila][casilla2] != 0);
-    // Verifica que las casillas sean diferentes y que ambas estén vacías en el
-    // sudoku original
+  public void mutarIndividuo(Individuo individuo) {
+    double randomOperacion = Math.random();
+    if (randomOperacion < this.tasaMutacion) {
+      int casilla1, casilla2, fila;
+      do {
+        casilla1 = (int) (Math.random() * 9); // Selecciona una casilla aleatoria de la fila
+        casilla2 = (int) (Math.random() * 9); // Selecciona otra casilla aleatoria de la fila
+        fila = (int) (Math.random() * 9); // Selecciona una fila aleatoria
+      } while (casilla1 == casilla2 || this.sudoku[fila][casilla1] != 0 || this.sudoku[fila][casilla2] != 0);
+      // Verifica que las casillas sean diferentes y que ambas estén vacías en el
+      // sudoku original
 
-    for (int i = 0; i < 9; i++) {
-      for (int j = 0; j < 9; j++) {
-        if (i == fila && j == casilla1) { // Intercambia las casillas seleccionadas
-          nuevoSudoku[i][j] = individuo.getGenes()[i][casilla2];
-        } else if (i == fila && j == casilla2) {
-          nuevoSudoku[i][j] = individuo.getGenes()[i][casilla1];
-        }
-      }
+      int temp = individuo.getGenes()[fila][casilla1]; // Intercambia las casillas seleccionada
+      individuo.getGenes()[fila][casilla1] = individuo.getGenes()[fila][casilla2];
+      individuo.getGenes()[fila][casilla2] = temp;
     }
-    // }
-    for (int i = 0; i < 9; i++) {
-      for (int j = 0; j < 9; j++) {
-        if (nuevoSudoku[i][j] == 0) { // Intercambia las casillas seleccionadas
-          nuevoSudoku[i][j] = individuo.getGenes()[i][j];
-        }
-      }
-    }
-    return new Individuo(nuevoSudoku);
   }
 
   // metodo para recorrer la poblacion y buscar si algun individuo tiene un
@@ -153,67 +215,43 @@ public class AlgoritmoGenetico {
     return mejorIndividuo;
   }
 
-  public Individuo seleccionarIndividuo2() {
-    int totalFitness = 0;
+  public Individuo seleccionarIndividuo() {
+    int sumaFitness = 0;
     for (Individuo individuo : this.poblacion) {
-      totalFitness += individuo.getFitness();
+      sumaFitness += individuo.getFitness();
     }
 
-    double[] probabilidades = new double[this.poblacion.size()];
-    double probAcumulada = 0.0;
-    for (int i = 0; i < this.poblacion.size(); i++) {
-      double probabilidad = (double) this.poblacion.get(i).getFitness() / totalFitness;
-      probAcumulada += probabilidad;
-      probabilidades[i] = probAcumulada;
-    }
+    int random = (int) (Math.random() * sumaFitness); // Genera un número aleatorio entre 0 y la suma total de los
 
-    double numeroAleatorio = Math.random();
-    for (int i = 0; i < this.poblacion.size(); i++) {
-      if (numeroAleatorio <= probabilidades[i]) {
-        return this.poblacion.get(i);
+    int sumaParcial = 0;
+    for (Individuo individuo : poblacion) {
+      sumaParcial += individuo.getFitness();
+      if (sumaParcial >= random) {
+        return individuo; // Retorna el individuo en el que se detuvo el recorrido
       }
     }
-
-    return this.poblacion.get(poblacion.size() - 1);
+    return null; // Si no se encuentra ningún individuo, retorna null
   }
 
-  public Individuo seleccionarIndividuo3() {
-    // Ordenar el arreglo de individuos en orden descendente según su propiedad
-    // "fitness"
-    Collections.sort(this.poblacion, Comparator.comparing(Individuo::getFitness).reversed());
-
-    // Crear un arreglo con los 10 mejores individuos
-    Individuo[] mejoresIndividuos = this.poblacion.stream()
-        .sorted(Comparator.comparing(Individuo::getFitness).reversed())
-        .limit(10)
-        .toArray(Individuo[]::new);
-
-    // Generar un número aleatorio entre 0 y 9
+  // seleccionar 3 individuo aleatorios y retortar el individuo con mejor fitness
+  // de los 3
+  public Individuo seleccionarIndividuoCompetir() {
+    // Generar 3 números aleatorios entre 0 y el tamaño de la población
     Random rand = new Random();
-    int indiceAleatorio = rand.nextInt(10);
+    int indiceAleatorio1 = rand.nextInt(this.poblacion.size());
+    int indiceAleatorio2 = rand.nextInt(this.poblacion.size());
+    int indiceAleatorio3 = rand.nextInt(this.poblacion.size());
 
-    // Retornar el individuo que se encuentra en el índice aleatorio generado en el
-    // arreglo de los 10 mejores individuos
-    return mejoresIndividuos[indiceAleatorio];
-  }
-
-  public Individuo seleccionarMejorFitness() {
-    // Ordenamos los individuos por su valor de fitness (de mayor a menor)
-    this.poblacion.sort(Comparator.comparingInt(Individuo::getFitness).reversed());
-
-    // Generamos un número aleatorio entre 0 y la suma de todos los fitness
-    int numAleatorio = (int) (Math.random() * (this.poblacion.size() * (this.poblacion.size() + 1)) / 2);
-
-    // Seleccionamos el individuo de la rueda de selección
-    int acumulado = 0;
-    for (int i = 0; i < this.poblacion.size(); i++) {
-      acumulado += i + 1;
-      if (acumulado > numAleatorio) {
-        return this.poblacion.get(i);
-      }
+    // Retornar el individuo con mejor fitness de los 3
+    if (this.poblacion.get(indiceAleatorio1).getFitness() > this.poblacion.get(indiceAleatorio2).getFitness()
+        && this.poblacion.get(indiceAleatorio1).getFitness() > this.poblacion.get(indiceAleatorio3).getFitness()) {
+      return this.poblacion.get(indiceAleatorio1);
+    } else if (this.poblacion.get(indiceAleatorio2).getFitness() > this.poblacion.get(indiceAleatorio1).getFitness()
+        && this.poblacion.get(indiceAleatorio2).getFitness() > this.poblacion.get(indiceAleatorio3).getFitness()) {
+      return this.poblacion.get(indiceAleatorio2);
+    } else {
+      return this.poblacion.get(indiceAleatorio3);
     }
-
-    // Si no se seleccionó ningún individuo, devolvemos null
-    return null;
   }
+
 }

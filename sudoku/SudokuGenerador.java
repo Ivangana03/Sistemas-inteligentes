@@ -44,10 +44,29 @@ public class SudokuGenerador {
       qq.generatePuzzle();
       qq.solve();
       Difficulty actual_d = qq.getDifficulty();
-      // System.out.println("Difficulty: " + actual_d.getName());
       go_on = !actual_d.equals(d);
     }
     int[] puzzle = qq.getPuzzle();
     return puzzle;
+  }
+
+  public static int[][] computePuzzleByDifficultyAndFitness(Difficulty difficulty, int rangoInferior,
+      int rangoSuperior) {
+    int[][] matrixSudoku;
+    int fitness = 0;
+
+    do {
+
+      // Difficulty difficulty = Difficulty.EXPERT;
+      int[] sudoku = computePuzzleByDifficulty(difficulty);
+      matrixSudoku = arrayToMatrix(sudoku);
+      // matrixSudokuCopy = SudokuGenerador.arrayToMatrix(sudoku);
+      matrixSudoku = PencilMarking.pencilMarking(matrixSudoku);
+      Individuo individuoTest = new Individuo(matrixSudoku);
+      fitness = individuoTest.getFitness();
+    } while (fitness < rangoInferior || fitness > rangoSuperior);
+    System.out.println("Sudoku generado con Fitiness: " + fitness);
+
+    return matrixSudoku;
   }
 }
